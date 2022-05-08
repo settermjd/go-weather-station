@@ -1,0 +1,26 @@
+{{ define "content" }}
+<h1>{{ .PageTitle }}</h1>
+<table class="drop-shadow-md">
+    <thead>
+    <tr class="hover:bg-slate-100 hover:ease-in ease-out transition duration-150">
+        <th class="text-center">Date</th>
+        <th class="text-center">Time</th>
+        <th>
+            <span class="text-center hidden xl:block">Temperature (&deg;C)</span>
+            <span class="text-center block xl:hidden">Temp (&deg;C)</span>
+        </th>
+        <th class="text-center">Humidity</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .WeatherData }}
+    <tr class="hover:bg-slate-100 hover:ease-in ease-out transition duration-150">
+        <td class="text-center">{{ .Timestamp.Format "2006.04.02" }}</td>
+        <td class="text-center">{{ .Timestamp.Format "15:04" }}</td>
+        <td class="text-center">{{ .Temperature }}</td>
+        <td class="text-center">{{ .Humidity }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ end }}

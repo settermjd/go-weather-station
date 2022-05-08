@@ -1,0 +1,14 @@
+{{ define "layout" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .PageTitle }}</title>
+    <link href="/assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+{{ template "content" . }}
+{{ template "footer" . }}
+</body>
+</html>
+{{ end }}
