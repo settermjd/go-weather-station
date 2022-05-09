@@ -22,9 +22,24 @@ type WeatherData struct {
 	Temperature float32
 }
 
-func defaultRoute(w http.ResponseWriter, r *http.Request) {
-	db, _ := sql.Open("sqlite3", "./data/database/weather_station_test_data.sqlite")
-	rows, _ := db.Query(`SELECT humidity, temperature, timestamp FROM weather_data`)
+type HandlerContext struct {
+	db *sql.DB
+}
+
+func NewHandlerContext(db *sql.DB) *HandlerContext {
+	if db == nil {
+		panic("nil database connection")
+	}
+	return &HandlerContext{db}
+}
+
+func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := ctx.db.Query(`SELECT humidity, temperature, timestamp FROM weather_data`)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 	defer rows.Close()
 
 	var weatherData []WeatherData
@@ -47,7 +62,7 @@ func defaultRoute(w http.ResponseWriter, r *http.Request) {
 		WeatherData: weatherData,
 	}
 
-	err := tmpl.ExecuteTemplate(w, "layout", data)
+	err = tmpl.ExecuteTemplate(w, "layout", data)
 	if err != nil {
 		// Log the detailed error
 		log.Println(err.Error())
@@ -60,9 +75,20 @@ func defaultRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	db, err := sql.Open("sqlite3", "./data/database/weather_station_test_data.sqlite")
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+	ctx := NewHandlerContext(db)
+
 	fs := http.FileServer(http.Dir("assets/"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
-	http.HandleFunc("/", defaultRoute)
-	http.ListenAndServe(":8000", nil)
+	http.HandleFunc("/", ctx.DefaultRouteHandler)
+	err = http.ListenAndServe(":8001", nil)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 }
