@@ -3,13 +3,20 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/gorilla/mux"
+	_ "github.com/gorilla/mux"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+type DisclaimerPageData struct {
+	PageTitle string
+}
 
 type DefaultPageData struct {
 	PageTitle   string
@@ -74,19 +81,53 @@ func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// This function handles static routes
+// That is, routes that have no dynamic properties and only return a rendered, static HTML template
+func (ctx *HandlerContext) HandleStaticRoute(w http.ResponseWriter, r *http.Request) {
+	//path := strings.TrimPrefix(r.URL.Path, "/")
+	params := mux.Vars(r)
+	path := params["path"]
+	log.Print("Path is " + path)
+	routeTemplate := filepath.Join("templates", "routes", path+".html")
+	footerTemplate := filepath.Join("templates", "footer.html")
+	layoutTemplate := filepath.Join("templates", "layout.html")
+
+	tmpl := template.Must(template.ParseFiles(routeTemplate, footerTemplate, layoutTemplate))
+	data := DisclaimerPageData{PageTitle: "Disclaimer"}
+	err := tmpl.ExecuteTemplate(w, "layout", data)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(404), 404)
+
+		return
+	}
+}
+
 func main() {
-	db, err := sql.Open("sqlite3", "./data/database/weather_station_test_data.sqlite")
+	// Initialise a connection to the application's database
+	const DatabaseFile = "./data/database/weather_station_test_data.sqlite"
+	db, err := sql.Open("sqlite3", DatabaseFile)
 	if err != nil {
 		log.Fatal(err.Error())
 		return
 	}
 	ctx := NewHandlerContext(db)
 
-	fs := http.FileServer(http.Dir("assets/"))
-	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
+	r := mux.NewRouter()
 
-	http.HandleFunc("/", ctx.DefaultRouteHandler)
-	err = http.ListenAndServe(":8001", nil)
+	// Serve static assets
+	fs := http.FileServer(http.Dir("assets/"))
+	//http.Handle("/assets/", http.StripPrefix("/assets/", fs))
+	r.Handle("/assets/", http.StripPrefix("/assets/", fs))
+
+	// Set up the routing table
+	//http.HandleFunc("/", ctx.DefaultRouteHandler)
+	//http.HandleFunc("/disclaimer", ctx.HandleStaticRoute)
+	r.HandleFunc("/", ctx.DefaultRouteHandler)
+	r.HandleFunc("/{path:about|disclaimer|cookie-policy|datenschutzerklaerung|disclaimer|impressum|privacy-policy}", ctx.HandleStaticRoute)
+
+	// Boot the application
+	err = http.ListenAndServe(":8001", r)
 	if err != nil {
 		log.Println(err.Error())
 		return
