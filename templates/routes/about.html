@@ -1,0 +1,28 @@
+{{ define "content" }}
+<div class="lg:col-span-2 order-2 lg:order-1">
+    <div>
+        <h2>What does the site do?</h2>
+        <p>The site shows how the PHP-based front end to a Raspberry PI-based weather station works. That way, you get to see what it's like before setting it up yourself. Not all of the weather station's functionality is available in the hosted release.</p>
+        <p>The full version:</p>
+        <ul>
+            <li>Displays a searchable list of temperature and humidity data retrieved over an extended period of time</li>
+            <li>Sends status notifications for a given date range</li>
+            <li>Allows for downloading temperature and humidity data in CSV format for a given date range</li>
+        </ul>
+        <h2>Why was the project built?</h2>
+        <p>The site is a web-based frontend to a Raspberry Pi weather station that I built using a combination of (naturally) a Raspberry Pi, Python, PHP, and Cron, integrated with Twilio and SendGrid.</p>
+        <p>It all started when my father-in-law asked me to build something to help him double-check the temperature in his flat, to be sure that the flat's heating was operating properly. I'd been playing with two Raspberry PIs around that time and felt that they'd be perfect for the job.</p>
+        <p>As I started working on the design, I became increasingly confident that the project would make for an excellent tutorial series for Twilio as well, so took the project further and
+            <a href="https://www.twilio.com/blog/build-weather-station-with-php-python-raspberry-pi" target="_blank">wrote a multi-part series stepping through how to build it</a>.</p>
+        <h2>Why should you use the project?</h2>
+        <p>As I see it, there are several reasons why you should get into the project.</p>
+        <ul>
+            <li>You're a maker or a hacker</li>
+            <li>You're curious about learning more about the weather around you</li>
+            <li>You want to build your own weather station</li>
+            <li>You have a Raspberry PI or two lying around</li>
+        </ul>
+        <p>If so, then this project is for you! By setting it up, <strong>for under $100</strong>, you'll be able to measure the temperature and humidity anywhere you have the Raspberry Pi. You'll know exactly what the temperature and humidity are, much more fine-grained than a broader weather service could tell you.</p>
+    </div>
+</div>
+{{ end }}
