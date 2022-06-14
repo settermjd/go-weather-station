@@ -40,6 +40,18 @@ func NewHandlerContext(db *sql.DB) *HandlerContext {
 	return &HandlerContext{db}
 }
 
+func BuildTemplate(templateName string) *template.Template {
+	log.Print("Content template is: " + templateName)
+	tmpl := template.Must(
+		template.ParseFiles(
+			filepath.Join("templates", "routes", templateName+".html"),
+			filepath.Join("templates", "footer.html"),
+			filepath.Join("templates", "layout.html"),
+		))
+
+	return tmpl
+}
+
 func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := ctx.db.Query(`SELECT humidity, temperature, timestamp FROM weather_data`)
 	if err != nil {
@@ -59,17 +71,11 @@ func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Re
 		weatherData = append(weatherData, u)
 	}
 
-	routeTemplate := filepath.Join("templates", "routes", "default.html")
-	footerTemplate := filepath.Join("templates", "footer.html")
-	layoutTemplate := filepath.Join("templates", "layout.html")
-
-	tmpl := template.Must(template.ParseFiles(routeTemplate, footerTemplate, layoutTemplate))
-	data := DefaultPageData{
+	tmpl := BuildTemplate("default")
+	err = tmpl.ExecuteTemplate(w, "layout", DefaultPageData{
 		PageTitle:   "DIY Weather Station",
 		WeatherData: weatherData,
-	}
-
-	err = tmpl.ExecuteTemplate(w, "layout", data)
+	})
 	if err != nil {
 		// Log the detailed error
 		log.Println(err.Error())
@@ -84,17 +90,11 @@ func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Re
 // This function handles static routes
 // That is, routes that have no dynamic properties and only return a rendered, static HTML template
 func (ctx *HandlerContext) HandleStaticRoute(w http.ResponseWriter, r *http.Request) {
-	//path := strings.TrimPrefix(r.URL.Path, "/")
 	params := mux.Vars(r)
 	path := params["path"]
-	log.Print("Path is " + path)
-	routeTemplate := filepath.Join("templates", "routes", path+".html")
-	footerTemplate := filepath.Join("templates", "footer.html")
-	layoutTemplate := filepath.Join("templates", "layout.html")
 
-	tmpl := template.Must(template.ParseFiles(routeTemplate, footerTemplate, layoutTemplate))
-	data := DisclaimerPageData{PageTitle: "Disclaimer"}
-	err := tmpl.ExecuteTemplate(w, "layout", data)
+	tmpl := BuildTemplate(path)
+	err := tmpl.ExecuteTemplate(w, "layout", DisclaimerPageData{PageTitle: "Disclaimer"})
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, http.StatusText(404), 404)
