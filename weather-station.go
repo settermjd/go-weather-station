@@ -63,12 +63,12 @@ func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Re
 
 	var weatherData []WeatherData
 	for rows.Next() {
-		var u WeatherData
-		err := rows.Scan(&u.Humidity, &u.Temperature, &u.Timestamp)
+		var wd WeatherData
+		err := rows.Scan(&wd.Humidity, &wd.Temperature, &wd.Timestamp)
 		if err != nil {
 			fmt.Fprintf(w, "Unable to add record: %s\n", err)
 		}
-		weatherData = append(weatherData, u)
+		weatherData = append(weatherData, wd)
 	}
 
 	tmpl := BuildTemplate("default")
