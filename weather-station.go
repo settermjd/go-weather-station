@@ -117,12 +117,9 @@ func main() {
 
 	// Serve static assets
 	fs := http.FileServer(http.Dir("assets/"))
-	//http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 	r.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	// Set up the routing table
-	//http.HandleFunc("/", ctx.DefaultRouteHandler)
-	//http.HandleFunc("/disclaimer", ctx.HandleStaticRoute)
 	r.HandleFunc("/", ctx.DefaultRouteHandler)
 	r.HandleFunc("/{path:about|disclaimer|cookie-policy|datenschutzerklaerung|disclaimer|impressum|privacy-policy}", ctx.HandleStaticRoute)
 
