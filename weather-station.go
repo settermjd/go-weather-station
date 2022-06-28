@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
-	"time"
+
+	wd "github.com/settermjd/weatherdata"
 
 	"github.com/gorilla/mux"
 	_ "github.com/gorilla/mux"
@@ -20,24 +20,7 @@ type DisclaimerPageData struct {
 
 type DefaultPageData struct {
 	PageTitle   string
-	WeatherData []WeatherData
-}
-
-type WeatherData struct {
-	Timestamp   time.Time
-	Humidity    float32
-	Temperature float32
-}
-
-type HandlerContext struct {
-	db *sql.DB
-}
-
-func NewHandlerContext(db *sql.DB) *HandlerContext {
-	if db == nil {
-		panic("nil database connection")
-	}
-	return &HandlerContext{db}
+	WeatherData []wd.WeatherData
 }
 
 func BuildTemplate(templateName string) *template.Template {
@@ -52,29 +35,22 @@ func BuildTemplate(templateName string) *template.Template {
 	return tmpl
 }
 
+type HandlerContext struct {
+	wds *wd.WeatherDataService
+}
+
+func NewHandlerContext(wds *wd.WeatherDataService) *HandlerContext {
+	if wds == nil {
+		panic("nil Weather Data object")
+	}
+	return &HandlerContext{wds}
+}
+
 func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := ctx.db.Query(`SELECT humidity, temperature, timestamp FROM weather_data`)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, http.StatusText(500), 500)
-		return
-	}
-	defer rows.Close()
-
-	var weatherData []WeatherData
-	for rows.Next() {
-		var wd WeatherData
-		err := rows.Scan(&wd.Humidity, &wd.Temperature, &wd.Timestamp)
-		if err != nil {
-			fmt.Fprintf(w, "Unable to add record: %s\n", err)
-		}
-		weatherData = append(weatherData, wd)
-	}
-
 	tmpl := BuildTemplate("default")
-	err = tmpl.ExecuteTemplate(w, "layout", DefaultPageData{
+	err := tmpl.ExecuteTemplate(w, "layout", DefaultPageData{
 		PageTitle:   "DIY Weather Station",
-		WeatherData: weatherData,
+		WeatherData: ctx.wds.GetWeatherData(wd.WeatherDataSearchParams{}),
 	})
 	if err != nil {
 		// Log the detailed error
@@ -111,17 +87,23 @@ func main() {
 		log.Fatal(err.Error())
 		return
 	}
-	ctx := NewHandlerContext(db)
+	ctx := NewHandlerContext(wd.NewWeatherDataService(db))
 
 	r := mux.NewRouter()
 
-	// Serve static assets
-	fs := http.FileServer(http.Dir("assets/"))
-	r.Handle("/assets/", http.StripPrefix("/assets/", fs))
-
 	// Set up the routing table
-	r.HandleFunc("/", ctx.DefaultRouteHandler)
-	r.HandleFunc("/{path:about|disclaimer|cookie-policy|datenschutzerklaerung|disclaimer|impressum|privacy-policy}", ctx.HandleStaticRoute)
+	r.HandleFunc("/", ctx.DefaultRouteHandler).
+		Methods("GET")
+
+	// Serve static pages
+	r.HandleFunc(
+		"/{path:about|disclaimer|cookie-policy|datenschutzerklaerung|disclaimer|impressum|privacy-policy}",
+		ctx.HandleStaticRoute,
+	).Methods("GET")
+
+	// Serve static assets
+	fs := http.FileServer(http.Dir("./assets"))
+	r.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	// Boot the application
 	err = http.ListenAndServe(":8001", r)
