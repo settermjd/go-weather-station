@@ -22,5 +22,10 @@
     </tr>
     {{ end }}
     </tbody>
+    <tfoot>
+    <tr class="hover:bg-slate-100 hover:ease-in ease-out transition duration-150">
+        <td colspan="4">Total Results: {{ len .WeatherData }}</td>
+    </tr>
+    </tfoot>
 </table>
 {{ end }}
