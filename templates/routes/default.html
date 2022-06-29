@@ -15,7 +15,7 @@
     <tbody>
     {{ range .WeatherData }}
     <tr class="hover:bg-slate-100 hover:ease-in ease-out transition duration-150">
-        <td class="text-center">{{ .Timestamp.Format "2006.04.02" }}</td>
+        <td class="text-center">{{ .Timestamp.Format "Jan 02, 2006" }}</td>
         <td class="text-center">{{ .Timestamp.Format "15:04" }}</td>
         <td class="text-center">{{ .Temperature }}</td>
         <td class="text-center">{{ .Humidity }}</td>
