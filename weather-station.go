@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	wd "github.com/settermjd/weatherdata"
@@ -47,10 +49,20 @@ func NewHandlerContext(wds *wd.WeatherDataService) *HandlerContext {
 }
 
 func (ctx *HandlerContext) DefaultRouteHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	searchParams := wd.WeatherDataSearchParams{}
+	if startDate, ok := params["startDate"]; ok {
+		searchParams.StartDate = startDate
+	}
+	if endDate, ok := params["endDate"]; ok {
+		searchParams.EndDate = endDate + " 23:59:59"
+	}
+
 	tmpl := BuildTemplate("default")
 	err := tmpl.ExecuteTemplate(w, "layout", DefaultPageData{
 		PageTitle:   "DIY Weather Station",
-		WeatherData: ctx.wds.GetWeatherData(wd.WeatherDataSearchParams{}),
+		WeatherData: ctx.wds.GetWeatherData(searchParams),
 	})
 	if err != nil {
 		// Log the detailed error
@@ -92,8 +104,9 @@ func main() {
 	r := mux.NewRouter()
 
 	// Set up the routing table
-	r.HandleFunc("/", ctx.DefaultRouteHandler).
-		Methods("GET")
+	r.HandleFunc("/", ctx.DefaultRouteHandler).Methods("GET")
+	r.HandleFunc("/{startDate:[0-9-]*}", ctx.DefaultRouteHandler).Methods("GET")
+	r.HandleFunc("/{startDate:[0-9-]*}/{endDate:[0-9-]*}/", ctx.DefaultRouteHandler).Methods("GET")
 
 	// Serve static pages
 	r.HandleFunc(
